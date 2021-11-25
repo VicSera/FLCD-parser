@@ -2,36 +2,54 @@ import java.io.File
 import java.lang.RuntimeException
 
 class Grammar(file: File) {
+    val isCFG: Boolean
     val terminals: Set<String>
     val nonTerminals: Set<String>
-    val productions: Set<Pair<String, String>>
+    val productions: List<Pair<String, List<List<String>>>>
+
+    private val nonTerminalRegex = "[a-zA-Z_]+".toRegex()
 
     init {
-        val nonTerminalStr = "[a-zA-Z_]+"
+        val leftHandSideStr = "[a-zA-Z_ \"]+"
         val terminal = "[a-zA-Z0-9_!#$%^&*()\\[\\]{}<>]+"
+
         val tmpNonTerminal = mutableSetOf<String>()
         val tmpTerminals = mutableSetOf<String>()
-        val tmpProductions = mutableSetOf<Pair<String, String>>()
+        val tmpProductions = mutableListOf<Pair<String, List<List<String>>>>()
+        var tmpIsCFG = true
 
         file.forEachLine { line ->
             if (line.isNotEmpty() && line.isNotBlank()) {
-                val nonTerminal = "^${nonTerminalStr}".toRegex().find(line)?.value
-                    ?: throw RuntimeException("Line doesn't define any nonterminal")
-
-                tmpNonTerminal.add(nonTerminal)
-
                 val terminals = "\"${terminal}\"".toRegex().findAll(line).map { it.value }
                 tmpTerminals.addAll(terminals)
 
-                val productionsRaw = "^$nonTerminalStr := (.*)".toRegex().matchEntire(line)?.groupValues?.drop(1)?.get(0) ?: throw RuntimeException("Invalid nonterminal definition")
-                val productionPairs = productionsRaw.split("|").map { Pair(nonTerminal, it.trim()) }
-                tmpProductions.addAll(productionPairs)
-            }
+                val nonTerminalDefinition = "^($leftHandSideStr):=(.*)".toRegex().matchEntire(line)
+                    ?.groupValues?.drop(1)
 
+                val leftHandSide = nonTerminalDefinition?.getOrNull(0)?.trim()
+                    ?: throw RuntimeException("Line doesn't define any non-terminal: $line")
+
+                if (nonTerminalRegex.matches(leftHandSide))
+                    tmpNonTerminal.add(leftHandSide)
+                else {
+                    tmpIsCFG = false
+                    tmpNonTerminal.addAll(findNonTerminals(leftHandSide))
+                }
+
+                val productionsRaw = nonTerminalDefinition.getOrNull(1)
+                    ?: throw RuntimeException("Invalid productions for left hand side $leftHandSide: $line")
+                val pair = Pair(leftHandSide, productionsRaw.split("|").map { it.trim().split(" ") })
+                tmpProductions.add(pair)
+            }
         }
 
         nonTerminals = tmpNonTerminal.toSet()
         terminals = tmpTerminals.toSet()
-        productions = tmpProductions.toSet()
+        productions = tmpProductions.toList()
+        isCFG = tmpIsCFG
+    }
+
+    private fun findNonTerminals(str: String): List<String> {
+        return str.split(" ").filter { nonTerminalRegex.matches(it) }
     }
 }
