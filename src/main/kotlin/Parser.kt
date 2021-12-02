@@ -47,7 +47,7 @@ class Parser(val grammar: Grammar) {
                 allSymbols.forEach { symbol ->
                     val resultingClosure = goTo(state, symbol)
                     // TODO: second condition is not properly checked -> preexisting states get added every time resulting in an infinite loop
-                    if (resultingClosure.isNotEmpty() && states.find { it.productions == resultingClosure } == null) {
+                    if (resultingClosure.isNotEmpty() && states.find { it.productions.checkEqual(resultingClosure) } == null) {
                         tmpStates.add(State(nextState++, resultingClosure))
                         modified = true
                     }
