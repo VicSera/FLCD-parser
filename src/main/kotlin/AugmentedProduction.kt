@@ -15,4 +15,16 @@ class AugmentedProduction(
     fun moveToNextPosition(): AugmentedProduction {
         return AugmentedProduction(production, dotPosition + 1)
     }
+
+    override fun equals(other: Any?): Boolean {
+        return if (other is AugmentedProduction)
+            production.equalsProduction(other.production)
+        else false
+    }
+
+    override fun hashCode(): Int {
+        var result = production.hashCode()
+        result = 31 * result + dotPosition
+        return result
+    }
 }
