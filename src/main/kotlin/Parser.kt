@@ -75,12 +75,13 @@ class Parser(val grammar: Grammar) {
             else if (state.productions.size == 1 && state.productions.first().production.first == "(start)")
                 action = "accept"
             else if (state.productions.size == 1) {
-                grammar.productions
-                action = "reduce"
+                val augmentedProduction = state.productions.first()
+                val productionNumber = grammar.productions.indexOfFirst { it.equalsProduction(augmentedProduction.production) }
+                action = "reduce$productionNumber"
             }
-            LR0Row(action, symbolToState)
+            LR0Row(stateNumber, action, symbolToState)
         }
 
-        return LR0Table(rows)
+        return LR0Table(rows, grammar)
     }
 }

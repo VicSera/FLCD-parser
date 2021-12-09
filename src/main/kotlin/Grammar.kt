@@ -5,10 +5,10 @@ class Grammar(file: File, val startingState: String) {
     val isCFG: Boolean
     val terminals: Set<String>
     val nonTerminals: Set<String>
-    val productions: List<Pair<String, List<List<String>>>>
+    val productions: List<Pair<String, List<String>>>
 
     val allSymbols: Set<String>
-        get() = terminals.toMutableSet().union(nonTerminals)
+        get() = nonTerminals.toMutableSet().union(terminals)
 
     private val nonTerminalRegex = "[a-zA-Z_]+".toRegex()
 
@@ -18,7 +18,7 @@ class Grammar(file: File, val startingState: String) {
 
         val tmpNonTerminal = mutableSetOf<String>()
         val tmpTerminals = mutableSetOf<String>()
-        val tmpProductions = mutableListOf(Pair("(start)", listOf(listOf(startingState))))
+        val tmpProductions = mutableListOf(Pair("(start)", listOf(startingState)))
         var tmpIsCFG = true
 
         file.forEachLine { line ->
@@ -41,8 +41,10 @@ class Grammar(file: File, val startingState: String) {
 
                 val productionsRaw = nonTerminalDefinition.getOrNull(1)
                     ?: throw RuntimeException("Invalid productions for left hand side $leftHandSide: $line")
-                val pair = Pair(leftHandSide, productionsRaw.split("|").map { it.trim().split(" ") })
-                tmpProductions.add(pair)
+
+                val pairs = productionsRaw.split("|")
+                    .map { Pair(leftHandSide, it.trim().split(" ")) }
+                tmpProductions.addAll(pairs)
             }
         }
 
@@ -53,7 +55,7 @@ class Grammar(file: File, val startingState: String) {
     }
 
     fun productionsForNonTerminal(nonTerminal: String): List<List<String>> {
-        return productions.find { it.first == nonTerminal }?.second ?: emptyList()
+        return productions.filter { it.first == nonTerminal }.map { it.second }
     }
 
     fun augmentedProductionsForNonTerminal(nonTerminal: String): List<AugmentedProduction> {
