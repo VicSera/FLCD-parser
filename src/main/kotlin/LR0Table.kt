@@ -1,8 +1,15 @@
 import de.vandermeer.asciitable.AsciiTable
-import de.vandermeer.skb.interfaces.document.TableRowStyle
 import de.vandermeer.skb.interfaces.transformers.textformat.TextAlignment
 
 class LR0Table(val rows: Array<LR0Row>, val grammar: Grammar) {
+    fun getActionForRow(rowNumber: Int): String {
+        return rows[rowNumber].action
+    }
+
+    fun getNextState(currentState: Int, nextSymbol: String): Int? {
+        return rows[currentState].symbolToState[nextSymbol]
+    }
+
     override fun toString(): String {
         val table = AsciiTable()
         val header = listOf("", "ACTION").toMutableList()

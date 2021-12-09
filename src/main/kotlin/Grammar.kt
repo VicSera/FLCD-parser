@@ -14,7 +14,7 @@ class Grammar(file: File, val startingState: String) {
 
     init {
         val leftHandSideStr = "[a-zA-Z_ \"]+"
-        val terminal = "[a-zA-Z0-9_!#$%^&*()\\[\\]{}<>]+"
+        val terminal = "[a-zA-Z0-9_!#$%^&*()\\[\\]{}<>,;=+/-]+"
 
         val tmpNonTerminal = mutableSetOf<String>()
         val tmpTerminals = mutableSetOf<String>()
@@ -23,7 +23,8 @@ class Grammar(file: File, val startingState: String) {
 
         file.forEachLine { line ->
             if (line.isNotEmpty() && line.isNotBlank()) {
-                val terminals = "\"${terminal}\"".toRegex().findAll(line).map { it.value }
+                val terminals = "\"${terminal}\"".toRegex().findAll(line)
+                    .map { it.value.trim('\"') }
                 tmpTerminals.addAll(terminals)
 
                 val nonTerminalDefinition = "^($leftHandSideStr):=(.*)".toRegex().matchEntire(line)
@@ -43,7 +44,9 @@ class Grammar(file: File, val startingState: String) {
                     ?: throw RuntimeException("Invalid productions for left hand side $leftHandSide: $line")
 
                 val pairs = productionsRaw.split("|")
-                    .map { Pair(leftHandSide, it.trim().split(" ")) }
+                    .map { rawProduction ->
+                        Pair(leftHandSide, rawProduction.trim().split(" ").map { it.trim('\"') })
+                    }
                 tmpProductions.addAll(pairs)
             }
         }
@@ -51,6 +54,15 @@ class Grammar(file: File, val startingState: String) {
         nonTerminals = tmpNonTerminal.toSet()
         terminals = tmpTerminals.toSet()
         productions = tmpProductions.toList()
+
+        productions.forEach { production ->
+            production.second.forEach { symbol ->
+                terminals.find { it == symbol }
+                    ?: nonTerminals.find { it == symbol}
+                    ?: throw Exception("Symbol $symbol not defined")
+            }
+        }
+
         isCFG = tmpIsCFG
     }
 
