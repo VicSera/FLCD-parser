@@ -18,21 +18,17 @@ class Menu(val grammar: Grammar) {
             1 -> grammar.terminals.forEach { println(it) }
             2 -> grammar.nonTerminals.forEach { println(it) }
             3 -> grammar.productions.forEach {
-                println("${it.first} := ${it.second.map { production -> 
-                        production.reduce{ acc, str -> "$acc $str" } 
-                    }.reduce{ acc, str -> "$acc | $str" }
-                }")
+                println("${it.first} := ${it.second.reduce { acc, s -> "$acc $s" }}")
             }
             4 -> {
                 print("Please input a non-terminal: ")
-                val nonTerminal = readLine()
-                val productions = grammar.productions.find { it.first == nonTerminal }
+                val nonTerminal = readLine()!!
+                val productions = grammar.productionsForNonTerminal(nonTerminal)
 
-                productions?.second
-                    ?.map { production -> production.reduce{ acc, str -> "$acc $str" } }
-                    ?.reduce{ acc, str -> "$acc | $str" }
-                    ?.let { println("$nonTerminal := $it") }
-                    ?: println("Non-terminal $nonTerminal not found")
+                productions
+                    .map { production -> production.reduce{ acc, str -> "$acc $str" } }
+                    .reduce{ acc, str -> "$acc | $str" }
+                    .let { println("$nonTerminal := $it") }
 
             }
             5 -> println(if (grammar.isCFG) "The grammar IS a CFG" else "The grammar is NOT a CFG")

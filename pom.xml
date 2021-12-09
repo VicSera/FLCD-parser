@@ -72,6 +72,11 @@
             <artifactId>kotlin-stdlib-jdk8</artifactId>
             <version>1.5.31</version>
         </dependency>
+        <dependency>
+            <groupId>de.vandermeer</groupId>
+            <artifactId>asciitable</artifactId>
+            <version>0.3.2</version>
+        </dependency>
     </dependencies>
 
 </project>

@@ -1,5 +1,9 @@
 program := cmpdstmt
 declaration := type identifier | declaration identifier
+identifier := character | identifier character | identifier digit
+character := "a" | "b" | "c" | "d" | "e" | "f" | "g" | "h" | "i" | "j" | "k" | "l" | "m" | "n" | "o" | "p" | "q" | "s" | "t" | "u" | "v" | "w" | "x" | "y" | "z" | "A" | "B" | "C" | "D" | "E" | "F" | "G" | "H" | "I" | "J" | "K" | "L" | "M" | "N" | "O" | "P" | "Q" | "R" | "S" | "T" | "U" | "V" | "W" | "X" | "Y" | "Z"
+digit := "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"
+no := digit | no digit
 type := simpleType | listDeclaration
 simpleType := "int" | "bool" | "string"
 listDeclaration := "list" "<" simpleType "," no ">" identifier
@@ -13,7 +17,8 @@ ostmt := "Print" "(" string ")"
 structstmt := cmpdstmt | ifstmt | forstmt
 ifstmt := "if" "(" condition ")" "then" structstmt | "if" "(" condition ")" "then" structstmt "else" structstmt
 forstmt := "for" "(" simpleType assignstmt "," no "," no ")" "do" structstmt
-condition := "("expression relation expression")"
-expression := expression "+" term | expression "-" term
+condition := "(" expression relation expression ")"
+relation := "<" | ">" | "<=" | ">=" | "==" | "!="
+expression := expression "+" term | expression "-" term | identifier | no
 term := term "*" element | term "/" element | element
-element := epxression | identifier | number
+element := expression | identifier | no
