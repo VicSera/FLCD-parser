@@ -27,4 +27,10 @@ class AugmentedProduction(
         result = 31 * result + dotPosition
         return result
     }
+
+    override fun toString(): String {
+        val rhs = production.second.toMutableList()
+        rhs.add(dotPosition, "\u2022")
+        return "${production.first} := ${rhs.reduce { acc, s -> "$acc$s" }}"
+    }
 }

@@ -37,8 +37,7 @@ class Parser(val grammar: Grammar) {
         val state0 = State(nextState++, closure(grammar.augmentedProductionsForNonTerminal("(start)")))
         val states = listOf(state0).toMutableList()
         var modified = true
-        val allSymbols = grammar.terminals.toMutableList()
-        allSymbols.addAll(grammar.nonTerminals)
+        val allSymbols = grammar.allSymbols
 
         while (modified) {
             modified = false
@@ -46,7 +45,6 @@ class Parser(val grammar: Grammar) {
             states.forEach { state ->
                 allSymbols.forEach { symbol ->
                     val resultingClosure = goTo(state, symbol)
-                    // TODO: second condition is not properly checked -> preexisting states get added every time resulting in an infinite loop
                     if (resultingClosure.isNotEmpty() && states.find { it.productions.checkEqual(resultingClosure) } == null) {
                         tmpStates.add(State(nextState++, resultingClosure))
                         modified = true
@@ -57,5 +55,32 @@ class Parser(val grammar: Grammar) {
         }
 
         return states
+    }
+
+    fun createTable(): LR0Table {
+        val canonicalCollection = canonicalCollection()
+        val allSymbols = grammar.allSymbols
+        val rows: Array<LR0Row> = Array(canonicalCollection.size) { stateNumber ->
+            val state = canonicalCollection[stateNumber]
+            val symbolToState = emptyMap<String, Int>().toMutableMap()
+            allSymbols.forEach { symbol ->
+                val resultingClosure = goTo(state, symbol)
+                canonicalCollection.find { it.productions.checkEqual(resultingClosure) }
+                    ?.let { symbolToState[symbol] = it.number }
+            }
+
+            var action = ""
+            if (symbolToState.isNotEmpty())
+                action = "shift"
+            else if (state.productions.size == 1 && state.productions.first().production.first == "(start)")
+                action = "accept"
+            else if (state.productions.size == 1) {
+                grammar.productions
+                action = "reduce"
+            }
+            LR0Row(action, symbolToState)
+        }
+
+        return LR0Table(rows)
     }
 }

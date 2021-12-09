@@ -1,12 +1,14 @@
 import java.io.File
 import java.lang.RuntimeException
 
-class Grammar(file: File) {
+class Grammar(file: File, val startingState: String) {
     val isCFG: Boolean
     val terminals: Set<String>
     val nonTerminals: Set<String>
     val productions: List<Pair<String, List<List<String>>>>
-    val startingState = "S"
+
+    val allSymbols: Set<String>
+        get() = terminals.toMutableSet().union(nonTerminals)
 
     private val nonTerminalRegex = "[a-zA-Z_]+".toRegex()
 
