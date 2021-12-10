@@ -1,7 +1,13 @@
 class Menu(val grammar: Grammar) {
+    private val parser = Parser(grammar)
+
     fun display() {
         while (true) {
-            menuLoop()
+            try {
+                menuLoop()
+            } catch(exception: ParserException) {
+                println("Parser failed: ${exception.message}")
+            }
         }
     }
 
@@ -12,6 +18,10 @@ class Menu(val grammar: Grammar) {
             3. Display productions
             4. Display productions for a non-terminal
             5. CFG check
+            6. Print canonical collection
+            7. Print goto table
+            8. Parse sequence
+            9. Parse PIF file
         """.trimIndent())
 
         when(readLine()!!.toInt()) {
@@ -32,6 +42,18 @@ class Menu(val grammar: Grammar) {
 
             }
             5 -> println(if (grammar.isCFG) "The grammar IS a CFG" else "The grammar is NOT a CFG")
+            6 -> parser.canonicalCollection().forEach { println(it) }
+            7 -> println(parser.createTable())
+            8 -> {
+                val sequence = listOf("{", "Print", "(", "constant", ")", "}")
+                parser.parse(sequence.map{ it.toString() }).forEach { print(it) }
+                println()
+            }
+            9 -> {
+                val fileName = readLine()!!
+                parser.parseFile(fileName).forEach { print(it) }
+                println()
+            }
         }
     }
 }

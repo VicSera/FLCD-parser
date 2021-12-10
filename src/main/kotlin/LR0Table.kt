@@ -30,7 +30,7 @@ class LR0Table(val rows: Array<LR0Row>, val grammar: Grammar) {
 
         table.setTextAlignment(TextAlignment.CENTER)
 
-        return table.render()
+        return table.render(1000)
     }
 }
 

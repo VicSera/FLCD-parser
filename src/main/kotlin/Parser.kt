@@ -1,4 +1,5 @@
 import de.vandermeer.asciitable.AsciiTable
+import java.io.File
 import java.util.*
 
 class Parser(val grammar: Grammar) {
@@ -73,8 +74,13 @@ class Parser(val grammar: Grammar) {
             }
 
             var action = ""
-            if (symbolToState.isNotEmpty())
+            if (symbolToState.isNotEmpty()) {
+                state.productions.find { it.getNextSymbol() == null }?.let { reduceProduction ->
+                    val allProductions = state.productions.map{ it.toString() }.reduce { acc, it -> "$acc\n$it" }
+                    throw ParserException("There is a conflict in the table: $reduceProduction implies a reduce action but the row is not empty\nClosure:\n$allProductions\n")
+                }
                 action = "shift"
+            }
             else if (state.productions.size == 1 && state.productions.first().production.first == "(start)")
                 action = "accept"
             else if (state.productions.size == 1) {
@@ -88,9 +94,8 @@ class Parser(val grammar: Grammar) {
         return LR0Table(rows, grammar)
     }
 
-    fun parse(sequence: List<String>) {
+    fun parse(sequence: List<String>): List<Int> {
         val table = createTable()
-//        println(table.toString())
         val asciiTable = AsciiTable()
 
         asciiTable.addRule()
@@ -125,18 +130,19 @@ class Parser(val grammar: Grammar) {
                 "shift" -> {
                     val nextSymbol = inputStack.pop()
                     val nextState = table.getNextState(currentState, nextSymbol)
-                        ?: throw Exception("Tried to go to a weird state ($currentState, $nextSymbol -> ?)")
+                        ?: throw ParserException("Syntax error: $nextSymbol")
                     workStack.push(Pair(nextSymbol, nextState))
                 }
                 else -> {
-                    val productionNumber = extractProductionNumber(action) ?: throw Exception("Invalid reduce action: $action")
+                    val productionNumber = extractProductionNumber(action)!!
                     val production = grammar.productions[productionNumber]
                     val poppedSymbols = emptyList<String>().toMutableList()
 
                     while (poppedSymbols != production.second)
                         poppedSymbols.add(0, workStack.pop().first)
 
-                    val nextState = table.getNextState(workStack.peek().second, production.first) ?: throw Exception("Tried to go to a weird state")
+                    val nextState = table.getNextState(workStack.peek().second, production.first)
+                        ?: throw ParserException("Syntax error: ${production.first}")
                     workStack.push(Pair(production.first, nextState))
 
                     outputBand.add(0, productionNumber)
@@ -146,9 +152,25 @@ class Parser(val grammar: Grammar) {
 
         asciiTable.addRule()
         println(asciiTable.render())
+
+        return outputBand
     }
 
-    fun extractProductionNumber(reduceAction: String): Int? {
+    fun parseFile(fileName: String): List<Int> {
+        val file = File(fileName)
+        val regex = "^\\((,|[^,]+), \\([0-9]+, [0-9]+\\)}".toRegex()
+        val sequence = emptyList<String>().toMutableList()
+
+        file.forEachLine {
+            sequence.add(regex.matchEntire(it)?.groupValues?.getOrNull(1)
+                ?: throw ParserException("Provided PIF file is invalid: line $it"))
+        }
+
+        println(sequence)
+        return parse(sequence)
+    }
+
+    private fun extractProductionNumber(reduceAction: String): Int? {
         return "reduce([0-9]+)".toRegex().matchEntire(reduceAction)?.groupValues?.get(1)?.toInt()
     }
 }
